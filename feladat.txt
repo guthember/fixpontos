@@ -1,0 +1,3 @@
+5. feladat
+Készíts nagypontosságú fixpontos valós aritmetikai modult (felhasználva a nagypontosságú egész
+aritmetikát): összeadás, kivonás, osztás!
