@@ -1,6 +1,8 @@
 {
    * CHDGC8 Gúth Erik Zoltán
    *
+   * Copyright 2016 Erik <Erik@erik-pc>
+   * 
    * 5. feladat
    * Készíts nagypontosságú fixpontos valós aritmetikai modult 
    * (felhasználva a nagypontosságú egész aritmetikát): 
@@ -15,10 +17,7 @@ uses
 	
 var
 	vSzam : ValosSzam;
-
-var
 	szam : string;
-	egesz : integer;
 BEGIN
 {
 // 	ez működött
@@ -42,5 +41,22 @@ BEGIN
 	Ismerteto();
 	Beker('Kerek egy fixpontos szamot: ',szam);
 	writeln('Amit megadtal: ',szam);
+	if( Ellenoriz(szam)  = false ) then
+	begin
+		writeln('Rossz a szam');
+	end
+	else
+	begin
+		writeln('Jo a szam');
+		Szetszed(szam, vSzam);
+		if( Pozitiv(vSzam) )then
+		begin
+			writeln('Pozitiv szam');
+		end
+		else
+		begin
+			writeln('Negativ szam');
+		end;
+	end;
 END.
 
