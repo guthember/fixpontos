@@ -22,31 +22,70 @@ const
 	MAXPONTOSSAG = 200;
 	
 type
-	Szamj            = Byte;
+	Szamj            = Char;
 	ElojelTipus      = (Poz,Neg);
 	PontossagTipus   = 0..MAXPONTOSSAG;
 	SzamrendszerTipus= 2..35;
 	PozSzam          = Array[0..MAXPONTOSSAG] of Szamj;
 	EgeszSzam        = Record
-                         elojel      : ElojelTipus;
+                         //elojel      : ElojelTipus;
 						 hossz       : PontossagTipus;
-						 szamrendszer: SzamrendszerTipus;
+						 //szamrendszer: SzamrendszerTipus;
 						 jegy        : PozSzam;
 					   End;
 	ValosSzam		 = Record
+						 elojel      : ElojelTipus;
 						 egesz, tort : EgeszSzam;
+						 szamrendszer: SzamrendszerTipus;
 					   End;
 
+	procedure Elvalaszto();
 	procedure Ismerteto();
 	procedure Beker(const kiir: string; var szam : string);
 	procedure Szetszed(const szam : string; var valos : ValosSzam);
+	function ValKiir(const valos : ValosSzam):string;
 	function Ellenoriz(const szam : string) : boolean;
 	function Szamjegy(const i : integer): string;
 	function ValSzamjegy(const s : string):integer;
 	function VezetoNullakElt(const szam : string; const hossz : integer) : string;
 	function Pozitiv(const vSzam : ValosSzam): boolean;
+	function KozosSzamrendszer(const vSzam1:ValosSzam; const vSzam2:ValosSzam):boolean;
 
 Implementation
+
+
+{
+* neve: ValKiir 
+* parameter: nincs
+* egy elválasztó sort ír ki
+* }
+procedure Elvalaszto();
+begin
+	writeln('----------------------------------------------------------------------');
+end;
+
+{
+* neve: ValKiir 
+* parameter: valos (valós szám)
+* visszatérés: sztring
+* visszadja a valós számot a (+/-)egész,tört(számrendszer) formában
+* }
+function ValKiir(const valos : ValosSzam):string;
+var
+		kiirni : string;
+begin 
+	kiirni := '';
+	if( valos.elojel = Poz ) then
+	begin
+		kiirni := '(+)';
+	end
+	else
+	begin 
+		kiirni := '(-)';
+	end;
+	kiirni := kiirni + valos.egesz.jegy+','+valos.tort.jegy+'('+IntToStr(valos.szamrendszer)+')';
+	ValKiir := kiirni;
+end;
 
 {
 * neve: Ellenoriz 
@@ -67,6 +106,11 @@ var
 	egesz     : string;
 	tort      : string;
 begin
+	if ( Length(szam) = 0 ) then
+	begin
+		Ellenoriz := false;
+		exit;
+	end;
 	for i := 1 to Length(szam) do
 	begin   
 		// ha nem megengedett karakterek vannak benne
@@ -161,7 +205,7 @@ begin
 		end;
 	
 		szamrSz := Copy( szam, nyit+1,zar-nyit-1);
-		writeln('szamrendszer = ',szamrSz);
+		// writeln('szamrendszer = ',szamrSz);
 		Try
 			szamr := StrToInt(szamrSz);
 		except
@@ -223,8 +267,8 @@ begin
 		end;
 		tort := '0';
 	end;
-	writeln('Egesz: ',egesz);
-	writeln('Tort: ', tort);
+	// writeln('Egesz: ',egesz);
+	// writeln('Tort: ', tort);
 
 	// számjegyek ellenőrzése
 	for i := 1 to Length(egesz) do
@@ -256,7 +300,7 @@ end;
 * }
 function Pozitiv(const vSzam : ValosSzam): boolean;
 begin
-	if( vSzam.egesz.elojel = Poz) then
+	if( vSzam.elojel = Poz) then
 	begin
 		Pozitiv := true;
 	end
@@ -266,25 +310,84 @@ begin
 	end;
 end;
 
+{
+* neve: Szetszed 
+* parameter: szam (sztring), valos ( valós szám)
+* szétszedi a valós számot részeire (előjel, egész, tört, számrendszer)
+* }
 procedure Szetszed(const szam : string; var valos : ValosSzam);
+var
+	nyit, zar : integer;
+	kezdo     : integer;
+	vesszo    : integer;
+	egesz     : string;
+	tort      : string;
 begin
-
 	// Előjel beállítása
 	if( (szam[1] = '+') or (szam[1] = '-') )then
 	begin
+		kezdo := 2;
 		if( szam[1] = '+') then
 		begin
-			valos.egesz.elojel := Poz;
+			valos.elojel := Poz;
 		end
 		else
 		begin
-			valos.egesz.elojel := Neg;
+			valos.elojel := Neg;
 		end;
 	end
 	else
 	begin
-		valos.egesz.elojel := Poz;
-	end; 	
+		kezdo := 1;
+		valos.elojel := Poz;
+	end;
+	
+	// számrendszer beállítása 	
+	nyit := Pos('(',szam);
+	// van számrendszer megadás
+	if ( not( nyit = 0 ) ) then
+	begin
+		zar := Pos(')',szam);
+		valos.szamrendszer := StrToInt( Copy( szam, nyit+1,zar-nyit-1));
+	end
+	else
+	begin
+		valos.szamrendszer := 10;
+	end;
+	
+	// egész és törtrész beállítása 
+	vesszo := Pos(',',szam);
+	// van törtrész
+	if ( not (vesszo = 0)) then
+	begin
+		egesz := Copy(szam, kezdo, vesszo - kezdo);
+		// ha nincs benne számrendszer megadás
+		if ( nyit = 0 ) then
+		begin
+			tort := Copy(szam, vesszo +1, Length(szam)-vesszo+1);
+		end
+		else
+		begin
+			tort := Copy(szam, vesszo + 1, nyit - vesszo - 1);
+		end;
+	end
+	else
+	begin
+		// ha nincs benne számrendszer megadás
+		if ( nyit = 0 )then
+		begin
+			egesz := Copy(szam, kezdo, Length(szam) - kezdo+1);
+		end
+		else
+		begin
+			egesz := Copy(szam, kezdo, nyit - kezdo);
+		end;
+		tort := '0'; 
+	end;
+	valos.egesz.jegy := egesz;
+	valos.egesz.hossz := Length(egesz);
+	valos.tort.jegy  := tort;
+	valos.tort.hossz := Length(tort);
 end;
 
 {
@@ -363,6 +466,23 @@ begin
 	szam := UpperCase(szam);
 end;
 
+{
+* neve: KozosSzamrendszer 
+* paraméter: vSzam1 (valós szám), vSzam2 ( valós szám )
+* visszatérés: boolean
+* ha eltérőek a számrendszerek akkor false, egyébként true
+* }
+function KozosSzamrendszer(const vSzam1:ValosSzam; const vSzam2:ValosSzam):boolean;
+begin
+	if ( vSzam1.szamrendszer <> vSzam2.szamrendszer ) then
+	begin
+		KozosSzamrendszer := false;
+	end
+	else
+	begin 
+		KozosSzamrendszer := true;
+	end;
+end;
 
 begin
 end.

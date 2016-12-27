@@ -13,11 +13,12 @@
 program fixpontos5;
 
 uses
-	FixUnit, SysUtils;
+	FixUnit, SysUtils, Video;
 	
 var
-	vSzam : ValosSzam;
+	vSzam1, vSzam2 : ValosSzam;
 	szam : string;
+	
 BEGIN
 {
 // 	ez működött
@@ -38,9 +39,32 @@ BEGIN
 		writeln('Nincs vezeto nulla');
 	end;
 }	
+	ClearScreen();
 	Ismerteto();
-	Beker('Kerek egy fixpontos szamot: ',szam);
-	writeln('Amit megadtal: ',szam);
+	Elvalaszto();
+	Beker('Kerem az elso szamot: ',szam);
+	if( not (Ellenoriz(szam) ) ) then
+	begin
+		writeln('Rossz a megadás!');
+		exit;
+	end;
+	Szetszed(szam, vSzam1);
+	Beker('Kerem a masodik szamot: ',szam);
+	if( not (Ellenoriz(szam) ) ) then
+	begin
+		writeln('Rossz a megadás!');
+		exit;
+	end;
+	Szetszed(szam, vSzam2);
+	Elvalaszto();
+	if ( not (KozosSzamrendszer(vSzam1, vSzam2) ) ) then
+	begin
+		writeln('Nem kozos a szamrendszer, hiba!');
+		exit;
+	end;
+	writeln('Elso    szam:',ValKiir(vSzam1));
+	writeln('Masodik szam:',ValKiir(vSzam2));
+{	writeln('Amit megadtal: ',szam);
 	if( Ellenoriz(szam)  = false ) then
 	begin
 		writeln('Rossz a szam');
@@ -49,14 +73,22 @@ BEGIN
 	begin
 		writeln('Jo a szam');
 		Szetszed(szam, vSzam);
-		if( Pozitiv(vSzam) )then
+		writeln(ValKiir(vSzam));
+		writeln('Szamrendszer: ',vSzam.szamrendszer);
+		writeln('Egeszresz: ',vSzam.egesz.jegy);
+		writeln('Hossza   : ',vSzam.egesz.hossz);
+		writeln('Tortresz: ',vSzam.tort.jegy);
+		writeln('Hossza   : ',vSzam.tort.hossz);
+		if( not Pozitiv(vSzam) )then
 		begin
-			writeln('Pozitiv szam');
+			writeln('Negativ szam');
 		end
 		else
 		begin
-			writeln('Negativ szam');
+			writeln('Pozitiv szam');
 		end;
 	end;
+}
+
 END.
 
