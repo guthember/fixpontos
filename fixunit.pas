@@ -1,11 +1,10 @@
 {
-   FIXUNIT.pas
-   
-   Copyright 2016 Erik <Erik@erik-pc>
-   
-   CHDGC8 Gúth Erik Zoltán
-   * 
-   
+* 
+* FIXUNIT.pas
+* Copyright 2016 Erik <Erik@erik-pc>
+* 
+* CHDGC8 Gúth Erik Zoltán
+*   
 }
 
 Unit FixUnit;
@@ -31,7 +30,8 @@ type
                          //elojel      : ElojelTipus;
 						 hossz       : PontossagTipus;
 						 //szamrendszer: SzamrendszerTipus;
-						 jegy        : PozSzam;
+						 //jegy        : PozSzam;
+						 jegy          : string;
 					   End;
 	ValosSzam		 = Record
 						 elojel      : ElojelTipus;
@@ -43,15 +43,62 @@ type
 	procedure Ismerteto();
 	procedure Beker(const kiir: string; var szam : string);
 	procedure Szetszed(const szam : string; var valos : ValosSzam);
+	procedure DebugSzam(const valos: ValosSzam);
+	procedure Osszehoz(var v1 : ValosSzam; var v2 : ValosSzam);
 	function ValKiir(const valos : ValosSzam):string;
 	function Ellenoriz(const szam : string) : boolean;
 	function Szamjegy(const i : integer): string;
 	function ValSzamjegy(const s : string):integer;
-	function VezetoNullakElt(const szam : string; const hossz : integer) : string;
+	function VezetoNullakElt(const szam : string) : string;
 	function Pozitiv(const vSzam : ValosSzam): boolean;
 	function KozosSzamrendszer(const vSzam1:ValosSzam; const vSzam2:ValosSzam):boolean;
+	function VOsszead(const vSzam1:ValosSzam; const vSzam2:ValosSzam):ValosSzam;
+	function VNagyobb(const miC : ValosSzam; const minelC : ValosSzam): boolean;
+	function VEgyenlo(const miC : ValosSzam; const minelC : ValosSzam): boolean;
+
 
 Implementation
+
+procedure DebugSzam(const valos: ValosSzam);
+begin
+	writeln('Elojel: ',valos.elojel);
+	writeln('Egesz: ', valos.egesz.jegy);
+	writeln('Hossz: ', valos.egesz.hossz);
+	writeln('Tort: ', valos.tort.jegy);
+	writeln('Hossz: ', valos.tort.hossz);
+end;
+
+
+procedure Osszehoz(var v1 : ValosSzam; var v2 : ValosSzam);
+var
+	db     : integer;
+	i      : integer;
+begin
+	// ha különböző hosszak a törtrészek 0-val kiegészíteni a kissebbet
+	if ( v1.tort.hossz <> v2.tort.hossz ) then
+	begin
+		db := v1.tort.hossz - v2.tort.hossz;
+		if( db > 0 ) then
+		// v2 kell
+		begin 
+			for i := 1 to db do
+			begin
+				 v2.tort.jegy := v2.tort.jegy + '0';
+			end; 
+			v2.tort.hossz := v1.tort.hossz;
+		end
+		else
+		// v1 kell
+		begin 
+			db := abs(db);
+			for i := 1 to db do
+			begin
+				 v1.tort.jegy := v1.tort.jegy + '0';
+			end; 
+			v1.tort.hossz := v2.tort.hossz;
+		end;
+	end;
+end;
 
 
 {
@@ -111,6 +158,7 @@ begin
 		Ellenoriz := false;
 		exit;
 	end;
+	
 	for i := 1 to Length(szam) do
 	begin   
 		// ha nem megengedett karakterek vannak benne
@@ -270,6 +318,13 @@ begin
 	// writeln('Egesz: ',egesz);
 	// writeln('Tort: ', tort);
 
+	// Pontosság leellenőrzése
+	if( (Length(egesz)+Length(tort)) > MAXPONTOSSAG ) then
+	begin
+		Ellenoriz := false;
+		exit;
+	end; 
+	
 	// számjegyek ellenőrzése
 	for i := 1 to Length(egesz) do
 	begin
@@ -384,8 +439,8 @@ begin
 		end;
 		tort := '0'; 
 	end;
-	valos.egesz.jegy := egesz;
-	valos.egesz.hossz := Length(egesz);
+	valos.egesz.jegy := VezetoNullakElt(egesz);
+	valos.egesz.hossz := Length(valos.egesz.jegy);
 	valos.tort.jegy  := tort;
 	valos.tort.hossz := Length(tort);
 end;
@@ -398,6 +453,7 @@ end;
 procedure Ismerteto();
 begin
 	writeln('Fixpontos szamokkal vegzett muveletek');
+	writeln('A szamjegyek hossza max (egesz+tort): 200 darab.');
 	writeln('A szam megadasa a kovetkezo kepen lehetseges:');
 	writeln('	Az elojel megadasa :[+/-], ha semmi akkor az alapertelmezetten pozitiv.');
 	writeln(' 	Egesz resz:');
@@ -437,13 +493,13 @@ end;
 * visszatérés: string
 * vezető nullákat eltávolítja a sztringből
 * }
-function VezetoNullakElt(const szam : string; const hossz : integer) : string;
+function VezetoNullakElt(const szam : string) : string;
 var
 	ujSzam : string;
 	ujHossz : integer;
 begin
 	ujSzam := szam;
-	ujHossz := hossz;
+	ujHossz := Length(szam);
 	// amíg van vezető nulla és a hossz nagyobb mint 1
 	while ( (Pos('0',ujSzam) = 1) and (ujHossz > 1) ) do
 	begin
@@ -464,7 +520,7 @@ begin
 	write(kiir);
 	readln(szam);
 	szam := UpperCase(szam);
-end;
+end; 
 
 {
 * neve: KozosSzamrendszer 
@@ -481,6 +537,194 @@ begin
 	else
 	begin 
 		KozosSzamrendszer := true;
+	end;
+end;
+
+{
+* neve: Vnagyobb 
+* paraméter: miC (valós szám), minelC ( valós szám )
+* visszatérés: boolean
+* ha mi nagyobb minél akkor true, egyébként false
+* }
+function VNagyobb(const miC : ValosSzam; const minelC : ValosSzam): boolean;
+var
+	i       : integer;
+	mi,minel: ValosSzam;
+begin
+	mi    := miC;
+	minel := minelC;
+	// törtrészek összehozása
+	Osszehoz(mi,minel);
+	// ha nem egyenlőek az előjelek
+	if( mi.elojel <> minel.elojel ) then
+	begin 
+		// amelyik pozitív az a nagyobb
+		if ( mi.elojel = Poz ) then
+		begin
+			VNagyobb := true;
+		end
+		else
+		begin
+			VNagyobb := false;
+		end;
+	end
+	else
+	// egyforma előjelek
+	begin
+		// ha pozitivak, amelyik hosszabb az a nagyobb
+		if (mi.elojel = Poz) then
+		begin 
+			if( mi.egesz.hossz > minel.egesz.hossz ) then
+			begin
+				VNagyobb := true;
+			end
+			else if( minel.egesz.hossz > mi.egesz.hossz) then
+			begin 
+				VNagyobb := false;
+			end
+			else
+			// egyformák az egész részek
+			begin 
+				i := 1;
+				while ( (mi.egesz.jegy[i] = minel.egesz.jegy[i]) and (i <= mi.egesz.hossz)) do
+				begin 
+					inc(i);
+				end; 
+				// az egész rész nagyobb
+				if (i <= mi.egesz.hossz) then
+				begin
+					if( mi.egesz.jegy[i] > minel.egesz.jegy[i]) then
+						VNagyobb := true
+					else
+						VNagyobb := false;
+				end
+				else
+				// az egész rész egyforma, a tört rész számít
+				begin
+					// a két törtrész összehasonlítása
+					i := 1;
+					while( (mi.tort.jegy[i] = minel.tort.jegy[i]) and( i <= mi.tort.hossz) )do
+					begin
+						inc(i);
+					end;
+					//tört rész nagyobb
+					if(i <= mi.tort.hossz ) then
+					begin
+						if( mi.tort.jegy[i] > minel.tort.jegy[i] ) then
+						begin
+							VNagyobb := true;
+							exit;
+						end
+						else
+						begin
+							VNagyobb := false;
+							exit;
+						end;
+					end;
+					VNagyobb := false;
+				end;
+			end;
+		end
+		else
+		// ha negatívak
+		begin
+			if (mi.egesz.hossz < minel.egesz.hossz) then
+			begin
+				VNagyobb := true;
+			end
+			else if( mi.egesz.hossz > minel.egesz.hossz) then
+			begin
+				VNagyobb := false;
+			end
+			else
+			// egyforma hosszak egészeket végignézni
+			begin 
+				i := 1;
+				while( (mi.egesz.jegy[i] = minel.egesz.jegy[i]) and ( i <= mi.egesz.hossz) )do
+				begin
+					inc(i);
+				end;
+				if( i <= mi.egesz.hossz ) then
+				begin
+
+					if( mi.egesz.jegy[i] < minel.egesz.jegy[i]) then
+					begin
+						VNagyobb := true;
+					end
+					else
+					begin 
+						VNagyobb := false;
+					end;
+				end
+				else
+				// egyforma egész, törtrészt kell nézni
+				begin 
+					i := 1;
+					while( (mi.tort.jegy[i] = minel.tort.jegy[i]) and( i <= mi.tort.hossz) )do
+					begin
+						inc(i);
+					end;
+					//tört rész nagyobb
+					if(i <= mi.tort.hossz ) then
+					begin
+						if( mi.tort.jegy[i] < minel.tort.jegy[i] ) then
+						begin
+							VNagyobb := true;
+							exit;
+						end
+						else
+						begin
+							VNagyobb := false;
+							exit;
+						end;
+					end;
+					VNagyobb := false;
+				end;
+			end;
+		end;
+	end;
+end;
+
+{
+* neve: VOsszead 
+* paraméter: vSzam1 (valós szám), vSzam2 ( valós szám )
+* visszatérés: valós szám
+* ha eltérőek a számrendszerek akkor false, egyébként true
+* }
+function VOsszead(const vSzam1:ValosSzam; const vSzam2:ValosSzam):ValosSzam;
+begin
+	// ha előjelük egyformák
+	if ( vSzam1.elojel = vSzam2.elojel) then
+	begin 
+	end
+	else
+	// ha nem egyformák az előjelek	
+	begin
+	end;
+end;
+
+{
+* neve: VEgyenlo 
+* paraméter: miC (valós szám), minelC ( valós szám )
+* visszatérés: boolean
+* ha egyenlőek a számok akkor true, egyébként false
+* }
+function VEgyenlo(const miC : ValosSzam; const minelC : ValosSzam): boolean;
+var
+	mi,minel    : ValosSzam;
+begin
+	mi := miC;
+	minel := minelC;
+	// törtrészek beállítása
+	Osszehoz(mi, minel);
+	// az egyes részeket összehasonlítjuk
+	if ( (mi.elojel = minel.elojel) and (mi.egesz.jegy = minel.egesz.jegy) and (mi.tort.jegy = minel.tort.jegy) ) then
+	begin
+		VEgyenlo := true;
+	end
+	else
+	begin 
+		VEgyenlo := false;
 	end;
 end;
 

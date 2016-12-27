@@ -20,39 +20,20 @@ var
 	szam : string;
 	
 BEGIN
-{
-// 	ez működött
-	writeln('Hello vilag');
-	writeln(Szamjegy(10));
-	writeln(ValSzamjegy('9'));
-	readln(szam);
-	writeln(szam);
-	if( (Pos('0',szam)=1) and (Length(szam) > 1) ) then
-	begin
-		writeln('Vezeto nulla');
-		szam := VezetoNullakElt(szam, Length(szam));
-		egesz := StrToInt(szam);
-		writeln(2*egesz);
-	end
-	else
-	begin
-		writeln('Nincs vezeto nulla');
-	end;
-}	
 	ClearScreen();
 	Ismerteto();
 	Elvalaszto();
-	Beker('Kerem az elso szamot: ',szam);
+	Beker('Kerem az elso szamot  : ',szam);
 	if( not (Ellenoriz(szam) ) ) then
 	begin
-		writeln('Rossz a megadás!');
+		writeln('Rossz a megadas!');
 		exit;
 	end;
 	Szetszed(szam, vSzam1);
 	Beker('Kerem a masodik szamot: ',szam);
 	if( not (Ellenoriz(szam) ) ) then
 	begin
-		writeln('Rossz a megadás!');
+		writeln('Rossz a megadas!');
 		exit;
 	end;
 	Szetszed(szam, vSzam2);
@@ -64,31 +45,22 @@ BEGIN
 	end;
 	writeln('Elso    szam:',ValKiir(vSzam1));
 	writeln('Masodik szam:',ValKiir(vSzam2));
-{	writeln('Amit megadtal: ',szam);
-	if( Ellenoriz(szam)  = false ) then
+	
+	Elvalaszto();
+	if ( VEgyenlo(vSzam1, vSzam2)) then
 	begin
-		writeln('Rossz a szam');
+		writeln(ValKiir(vSzam1),' = ',ValKiir(vSzam2));
 	end
 	else
 	begin
-		writeln('Jo a szam');
-		Szetszed(szam, vSzam);
-		writeln(ValKiir(vSzam));
-		writeln('Szamrendszer: ',vSzam.szamrendszer);
-		writeln('Egeszresz: ',vSzam.egesz.jegy);
-		writeln('Hossza   : ',vSzam.egesz.hossz);
-		writeln('Tortresz: ',vSzam.tort.jegy);
-		writeln('Hossza   : ',vSzam.tort.hossz);
-		if( not Pozitiv(vSzam) )then
+		if ( VNagyobb(vSzam1, vSzam2) ) then
 		begin
-			writeln('Negativ szam');
+			writeln(ValKiir(vSzam1),' > ',ValKiir(vSzam2));
 		end
 		else
 		begin
-			writeln('Pozitiv szam');
+			writeln(ValKiir(vSzam1),' < ',ValKiir(vSzam2));
 		end;
 	end;
-}
-
 END.
 
