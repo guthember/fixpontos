@@ -17,8 +17,8 @@ uses
 	
 var
 	vSzam1, vSzam2 : ValosSzam;
-	szam : string;
-	
+	szam           : string;
+	osszeg         : ValosSzam;
 BEGIN
 	ClearScreen();
 	Ismerteto();
@@ -62,5 +62,7 @@ BEGIN
 			writeln(ValKiir(vSzam1),' < ',ValKiir(vSzam2));
 		end;
 	end;
+	Elvalaszto();
+	writeln(VOsszead(vSzam1,vSzam2));
 END.
 

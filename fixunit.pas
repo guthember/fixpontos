@@ -45,6 +45,7 @@ type
 	procedure Szetszed(const szam : string; var valos : ValosSzam);
 	procedure DebugSzam(const valos: ValosSzam);
 	procedure Osszehoz(var v1 : ValosSzam; var v2 : ValosSzam);
+	function IntToStr (i : integer) : String;
 	function ValKiir(const valos : ValosSzam):string;
 	function Ellenoriz(const szam : string) : boolean;
 	function Szamjegy(const i : integer): string;
@@ -52,12 +53,20 @@ type
 	function VezetoNullakElt(const szam : string) : string;
 	function Pozitiv(const vSzam : ValosSzam): boolean;
 	function KozosSzamrendszer(const vSzam1:ValosSzam; const vSzam2:ValosSzam):boolean;
-	function VOsszead(const vSzam1:ValosSzam; const vSzam2:ValosSzam):ValosSzam;
+	function VOsszead(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
 	function VNagyobb(const miC : ValosSzam; const minelC : ValosSzam): boolean;
 	function VEgyenlo(const miC : ValosSzam; const minelC : ValosSzam): boolean;
 
 
 Implementation
+
+function IntToStr (i : integer) : String;
+var 
+	s : string;
+begin
+   Str(i,s);
+   IntToStr:=s;
+end;
 
 procedure DebugSzam(const valos: ValosSzam);
 begin
@@ -68,7 +77,11 @@ begin
 	writeln('Hossz: ', valos.tort.hossz);
 end;
 
-
+{
+* neve: Osszehoz 
+* parameter: v1 (valós szám), v2 (valós szám)
+* törtrészeket egyenlő karakterszámra hozza (kiegészítés 0-val)
+* }
 procedure Osszehoz(var v1 : ValosSzam; var v2 : ValosSzam);
 var
 	db     : integer;
@@ -691,11 +704,140 @@ end;
 * visszatérés: valós szám
 * ha eltérőek a számrendszerek akkor false, egyébként true
 * }
-function VOsszead(const vSzam1:ValosSzam; const vSzam2:ValosSzam):ValosSzam;
+
+function VOsszead(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
+var
+	eltolas : integer;
+	at		: integer;
+	ertek   : integer;
+	egesz   : string;
+	tort    : string;
+	i       : integer;
+	vSzam1  : ValosSzam;
+	vSzam2  : ValosSzam;
+	tmp     : ValosSzam;
+	teljes  : string;
 begin
+	vSzam1 := vSzam1C;
+
+	vSzam2 := vSzam2C;
+	tort := '';
 	// ha előjelük egyformák
 	if ( vSzam1.elojel = vSzam2.elojel) then
-	begin 
+	begin
+		vSzam1.elojel := Poz;
+		vSzam2.elojel := Poz;
+		// először a törtrésztösszeadni
+		if( vSzam2.tort.hossz > vSzam1.tort.hossz) then
+		begin
+			tmp    := vSzam1;
+			vSzam1 := vSzam2;
+			vSzam2 := tmp;
+		end;
+		// ha csak másolni kell a karaktereket
+		if( (vSzam1.tort.hossz - vSzam2.tort.hossz) > 0 ) then
+		begin
+			for i := vSzam1.tort.hossz downto vSzam2.tort.hossz + 1 do
+			begin
+				tort := vSzam1.tort.jegy[i] + tort;
+			end; 	
+		end;
+		at := 0;
+		for i := vSzam2.tort.hossz downto 1 do
+		begin
+			ertek := ValSzamjegy(vSzam1.tort.jegy[i]) + ValSzamjegy(vSzam2.tort.jegy[i]) + at;
+			// ha nem lesz atvitel;
+			if ( ertek < vSzam1.szamrendszer) then
+			begin
+				tort := szamjegy(ertek)+tort;
+				at := 0;
+			end
+			else
+			// van átvitel
+			begin 
+				tort := szamjegy(ertek-vSzam1.szamrendszer) + tort;
+				at := 1;
+			end;
+		end; 
+
+		// egész rész összeadása
+		egesz:= '';
+		if( VNagyobb(vSzam2, vSzam1)) then
+		//csere
+		begin
+			tmp    := vSzam1;
+			vSzam1 := vSzam2;
+			vSzam2 := tmp;
+		end;
+		eltolas := vSzam1.egesz.hossz - vSzam2.egesz.hossz;
+		//at := 0;
+		for i := vSzam2.egesz.hossz downto 1 do
+		begin
+			ertek := ValSzamjegy(vSzam1.egesz.jegy[i+eltolas]) + ValSzamjegy(vSzam2.egesz.jegy[i]) + at;
+			// ha nem lesz atvitel;
+			if ( ertek < vSzam1.szamrendszer) then
+			begin
+				egesz := szamjegy(ertek)+egesz;
+				at := 0;
+			end
+			else
+			// van átvitel
+			begin 
+				egesz := szamjegy(ertek-vSzam1.szamrendszer) + egesz;
+				at := 1;
+			end;
+		end; 
+		i := eltolas;
+		while( i >= 1 )do
+		begin
+			ertek := ValSzamjegy(vSzam1.egesz.jegy[i])+at;
+			// ha nem lesz atvitel;
+			if ( ertek < vSzam1.szamrendszer) then
+			begin
+				egesz := szamjegy(ertek)+egesz;
+				at := 0;
+			end
+			else
+			// van átvitel
+			begin 
+				egesz := szamjegy(ertek-vSzam1.szamrendszer) + egesz;
+				at := 1;
+			end;
+			dec(i);
+			if (at = 0) then
+				break;
+		end;
+		// ha maradtak még számjegyek 
+		while( i >= 1 )do
+		begin
+			egesz := vSzam1.egesz.jegy[i] + egesz;
+			dec(i);
+		end;
+		if( (i = 0) and ( at = 1)) then
+		begin
+			egesz := '1' + egesz;
+		end;
+		//writeln(egesz,',',tort);
+{
+		tmp.szamrendszer := vSzam1.szamrendszer;
+		tmp.elojel       := vSzam1.elojel;
+		tmp.egesz.jegy   := egesz;
+		tmp.egesz.hossz  := Length(egesz);
+		tmp.tort.jegy    := tort;
+		tmp.tort.hossz   := Length(tort);
+		writeln(tmp.szamrendszer);
+		writeln(tmp.elojel);
+		writeln(tmp.egesz.jegy);
+		writeln(tmp.tort.jegy);
+}
+		teljes := '';
+		if( vSzam1C.elojel = Poz ) then
+			teljes := '(+)'
+		else
+			teljes := '(-)';
+		teljes := teljes + egesz + ','+ tort+'('+IntToStr(vSzam1.szamrendszer)+')';
+		
+		VOsszead := teljes;
 	end
 	else
 	// ha nem egyformák az előjelek	
