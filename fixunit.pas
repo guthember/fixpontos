@@ -54,6 +54,7 @@ type
 	function Pozitiv(const vSzam : ValosSzam): boolean;
 	function KozosSzamrendszer(const vSzam1:ValosSzam; const vSzam2:ValosSzam):boolean;
 	function VOsszead(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
+	function VKivon(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
 	function VNagyobb(const miC : ValosSzam; const minelC : ValosSzam): boolean;
 	function VEgyenlo(const miC : ValosSzam; const minelC : ValosSzam): boolean;
 
@@ -699,12 +700,165 @@ begin
 end;
 
 {
+* neve: VKivon 
+* paraméter: vSzam1 (valós szám), vSzam2 ( valós szám )
+* visszatérés: string
+* a különbségük string-ben
+* }
+function VKivon(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
+var
+	eltolas : integer;
+	at		: integer;
+	ertek   : integer;
+	egesz   : string;
+	tort    : string;
+	i       : integer;
+	vSzam1  : ValosSzam;
+	vSzam2  : ValosSzam;
+	tmp     : ValosSzam;
+	teljes  : string;
+	mibol   : integer;
+	mit     : integer;
+	csere   : boolean;
+begin
+	csere  := false;
+	vSzam1 := vSzam1C;
+	vSzam2 := vSzam2C;
+	if ( VEgyenlo(vSzam1, vSzam2)) then
+	begin
+		VKivon := '0,0';
+		exit;
+	end;
+	
+	// egyforma előjel
+	// 4 féle eset lehet
+	if( vSzam1.elojel = vSzam2.elojel)then
+	begin
+		// a nagyobból kell kivonni a kisebbet és majd az előjelek függvényében
+		// eldönteni az eredmény előjelét
+		vSzam1.elojel := Poz;
+		vSzam2.elojel := Poz;
+		Osszehoz(vSzam1, vSzam2);
+		// ha esetleg a második a nagyobb csere
+		if ( VNagyobb( vSzam2, vSzam1) )then
+		begin
+			tmp    := vSzam1;
+			vSzam1 := vSzam2;
+			vSzam2 := tmp;
+			csere := true;
+		end;
+		teljes:= '';
+		tort  := '';
+		egesz := '';
+		mibol := 0;
+		mit   := 0;
+		at    := 0;
+		for i := vSzam1.tort.hossz downto 1 do
+		begin
+			mibol := ValSzamjegy(vSzam1.tort.jegy[i]);
+			mit   := ValSzamjegy(vSzam2.tort.jegy[i])+at;
+			if ( mit > mibol ) then
+			begin
+				mibol := mibol + vSzam1.szamrendszer;
+				at := 1;
+			end
+			else
+			begin
+				at := 0;
+			end;
+			ertek := mibol - mit;
+			tort := Szamjegy(ertek)+tort;
+		end; 
+		
+		eltolas := vSzam1.egesz.hossz - vSzam2.egesz.hossz;
+		for i := vSzam2.egesz.hossz downto 1 do
+		begin
+			mibol := ValSzamjegy(vSzam1.egesz.jegy[i+eltolas]);
+			mit   := ValSzamjegy(vSzam2.egesz.jegy[i])+at;
+			if ( mit > mibol ) then
+			begin
+				mibol := mibol + vSzam1.szamrendszer;
+				at := 1;
+			end
+			else
+			begin
+				at := 0;
+			end;
+			ertek := mibol - mit;
+			egesz := Szamjegy(ertek)+egesz;
+		end;
+		// átvitel miatt lehet még számolás
+		i := eltolas;
+		while( i >= 1 )do
+		begin
+			if( at = 0)then
+				break;
+			mibol := ValSzamjegy(vSzam1.egesz.jegy[i]);
+			mit := at;
+			if( mit > mibol ) then
+			begin
+				mibol := mibol + vSzam1.szamrendszer;
+				at := 1;
+			end
+			else
+			begin
+				at := 0;
+			end;
+			ertek := mibol - mit;
+			egesz := Szamjegy(ertek)+egesz;
+			dec(i);
+		end;
+		// ha maradtak még számjegyek
+		while( i >= 1 )do
+		begin
+			egesz := vSzam1.egesz.jegy[i] + egesz;
+			dec(i);
+		end;
+		// kivonás vége szám = egesz,tort
+		teljes := egesz + ','+tort+'('+IntToStr(vSzam1.szamrendszer)+')';
+		// 4 féle eset
+		if( vSzam1C.elojel = Poz ) then
+		begin 
+			if ( csere ) then
+				teljes := '(-)'+teljes
+			else
+				teljes := '(+)'+teljes;
+		end
+		else
+		// negativ
+		begin 
+			if ( csere ) then
+				teljes := '(+)'+teljes
+			else
+				teljes := '(-)'+teljes;
+		end;
+		VKivon := teljes;
+	end
+	else
+	// különböző előjel
+	begin 
+		if ( vSzam2.elojel = Neg ) then
+		begin
+			vSzam2.elojel := Poz;
+			VKivon := VOsszead(vSzam1, vSzam2);
+		end
+		else
+		begin
+			vSzam1.elojel := Poz;
+			teljes := VOsszead(vSzam1, vSzam2);
+			Delete(teljes,1,3);
+			teljes := '(-)'+ teljes;
+			VKivon := teljes;
+		end;
+	end;
+end;
+
+{
 * neve: VOsszead 
 * paraméter: vSzam1 (valós szám), vSzam2 ( valós szám )
-* visszatérés: valós szám
-* ha eltérőek a számrendszerek akkor false, egyébként true
+* visszatérés: string
+* az összegük string-ben
 * }
-
 function VOsszead(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
 var
 	eltolas : integer;
@@ -717,9 +871,9 @@ var
 	vSzam2  : ValosSzam;
 	tmp     : ValosSzam;
 	teljes  : string;
+	csere   : boolean;
 begin
 	vSzam1 := vSzam1C;
-
 	vSzam2 := vSzam2C;
 	tort := '';
 	// ha előjelük egyformák
@@ -817,19 +971,7 @@ begin
 		begin
 			egesz := '1' + egesz;
 		end;
-		//writeln(egesz,',',tort);
-{
-		tmp.szamrendszer := vSzam1.szamrendszer;
-		tmp.elojel       := vSzam1.elojel;
-		tmp.egesz.jegy   := egesz;
-		tmp.egesz.hossz  := Length(egesz);
-		tmp.tort.jegy    := tort;
-		tmp.tort.hossz   := Length(tort);
-		writeln(tmp.szamrendszer);
-		writeln(tmp.elojel);
-		writeln(tmp.egesz.jegy);
-		writeln(tmp.tort.jegy);
-}
+
 		teljes := '';
 		if( vSzam1C.elojel = Poz ) then
 			teljes := '(+)'
@@ -842,6 +984,36 @@ begin
 	else
 	// ha nem egyformák az előjelek	
 	begin
+		csere := false;
+		vSzam1.elojel := Poz;
+		vSzam2.elojel := Poz;
+		if ( VNagyobb(vSzam2, vSzam1 ))then
+		begin
+			csere := true;
+			tmp   := vSzam1;
+			vSzam1:= vSzam2;
+			vSzam2:= tmp;
+		end;
+		teljes := VKivon(vSzam1,vSzam2);
+		
+		// előjel beállítása ha kell 
+		if ( csere ) then
+		begin
+			if ( vSzam2C.elojel = Neg) then
+			begin
+				Delete(teljes,1,3);
+				teljes := '(-)'+teljes;
+			end;
+		end
+		else
+		begin
+			if ( vSzam1C.elojel = Neg ) then
+			begin
+				Delete(teljes,1,3);
+				teljes := '(-)'+teljes;
+			end;
+		end;
+		VOsszead := teljes;
 	end;
 end;
 

@@ -18,7 +18,6 @@ uses
 var
 	vSzam1, vSzam2 : ValosSzam;
 	szam           : string;
-	osszeg         : ValosSzam;
 BEGIN
 	ClearScreen();
 	Ismerteto();
@@ -63,6 +62,8 @@ BEGIN
 		end;
 	end;
 	Elvalaszto();
-	writeln(VOsszead(vSzam1,vSzam2));
+	writeln('Osszeguk   :',VOsszead(vSzam1,vSzam2));
+	Elvalaszto();
+	writeln('Kulonbseguk:',VKivon(vSzam1,vSzam2));
 END.
 
