@@ -42,14 +42,20 @@ BEGIN
 			
 			if( not (Ellenoriz(szam) ) ) then
 			begin
+				writeln(tfOut,szam);
 				writeln(tfOut,'Rossz a megadas!');
+				Close(tfIn);
+				Close(tfOut);
 				exit;
 			end;
 			Szetszed(szam, vSzam1);
 			readln(tfIn, szam);
 			if( not (Ellenoriz(szam) ) ) then
 			begin
+				writeln(tfOut,szam);
 				writeln(tfOut,'Rossz a megadas!');
+				Close(tfIn);
+				Close(tfOut);
 				exit;
 			end;
 			Szetszed(szam, vSzam2);
@@ -57,6 +63,8 @@ BEGIN
 			if ( not (KozosSzamrendszer(vSzam1, vSzam2) ) ) then
 			begin
 				writeln(tfOut,'Nem kozos a szamrendszer, hiba!');
+				Close(tfIn);
+				Close(tfOut);
 				exit;
 			end;
 			writeln(tfOut,'Elso    szam:',ValKiir(vSzam1));

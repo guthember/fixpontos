@@ -180,7 +180,15 @@ var
 	egesz     : string;
 	tort      : string;
 begin
+	// nincs megadva semmi
 	if ( Length(szam) = 0 ) then
+	begin
+		Ellenoriz := false;
+		exit;
+	end;
+	
+	// nagyobb karakterszámot akar megadni
+	if ( Length(szam) > 200 ) then
 	begin
 		Ellenoriz := false;
 		exit;
