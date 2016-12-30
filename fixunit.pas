@@ -27,11 +27,8 @@ type
 	SzamrendszerTipus= 2..35;
 	PozSzam          = Array[0..MAXPONTOSSAG] of Szamj;
 	EgeszSzam        = Record
-                         //elojel      : ElojelTipus;
 						 hossz       : PontossagTipus;
-						 //szamrendszer: SzamrendszerTipus;
-						 //jegy        : PozSzam;
-						 jegy          : string;
+						 jegy        : string;
 					   End;
 	ValosSzam		 = Record
 						 elojel      : ElojelTipus;
@@ -45,6 +42,7 @@ type
 	procedure Szetszed(const szam : string; var valos : ValosSzam);
 	procedure DebugSzam(const valos: ValosSzam);
 	procedure Osszehoz(var v1 : ValosSzam; var v2 : ValosSzam);
+	procedure StrToValos(var mit : string; var vSzam : ValosSzam );
 	function IntToStr (i : integer) : String;
 	function ValKiir(const valos : ValosSzam):string;
 	function Ellenoriz(const szam : string) : boolean;
@@ -56,11 +54,20 @@ type
 	function VOsszead(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
 	function VKivon(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
 	function VNagyobb(const miC : ValosSzam; const minelC : ValosSzam): boolean;
+	function VNagyobbVagyEgyenlo(const miC : ValosSzam; const minelC : ValosSzam): boolean;
 	function VEgyenlo(const miC : ValosSzam; const minelC : ValosSzam): boolean;
+	function VOszt(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
 
 
 Implementation
 
+
+{
+* neve: IntToStr 
+* parameter: i (integer)
+* visszatérés: string
+* egész számot string-é alakítja
+* }
 function IntToStr (i : integer) : String;
 var 
 	s : string;
@@ -69,13 +76,19 @@ begin
    IntToStr:=s;
 end;
 
+{
+* neve: DebugSzam 
+* parameter: valos (valós szám)
+* hibakereséshez kiírja a valós számot minden paraméterével
+* }
 procedure DebugSzam(const valos: ValosSzam);
 begin
 	writeln('Elojel: ',valos.elojel);
-	writeln('Egesz: ', valos.egesz.jegy);
+	write('Egesz: ', valos.egesz.jegy);
 	writeln('Hossz: ', valos.egesz.hossz);
-	writeln('Tort: ', valos.tort.jegy);
+	write('Tort: ', valos.tort.jegy);
 	writeln('Hossz: ', valos.tort.hossz);
+	writeln('Szamr: ', valos.szamrendszer);
 end;
 
 {
@@ -116,7 +129,7 @@ end;
 
 
 {
-* neve: ValKiir 
+* neve: Elvalaszto 
 * parameter: nincs
 * egy elválasztó sort ír ki
 * }
@@ -726,7 +739,7 @@ begin
 	vSzam2 := vSzam2C;
 	if ( VEgyenlo(vSzam1, vSzam2)) then
 	begin
-		VKivon := '0,0';
+		VKivon := '(+)0,0('+IntToStr(vSzam1.szamrendszer)+')';
 		exit;
 	end;
 	
@@ -813,6 +826,11 @@ begin
 		begin
 			egesz := vSzam1.egesz.jegy[i] + egesz;
 			dec(i);
+		end;
+		// vezető nulla eltávolítása
+		while( (Length(egesz) >1) and (egesz[1] = '0')) do
+		begin
+			Delete(egesz,1,1);
 		end;
 		// kivonás vége szám = egesz,tort
 		teljes := egesz + ','+tort+'('+IntToStr(vSzam1.szamrendszer)+')';
@@ -1042,5 +1060,163 @@ begin
 	end;
 end;
 
+{
+* neve: VOszt
+* paraméter: vSzam1C (valós szám), vSzam2C ( valós szám )
+* visszatérés: string
+* max 10 jegyű eredménnyel tér vissza tizes számrendszerben
+* !!! Tovább fejlesztési lehetőség ------->
+* !!! Számrendszerek közötti átváltás
+* HA nulla az osztó akkor a ''Nullaval nem lehet osztani!'-l tér vissza
+* }
+function VOszt(const vSzam1C:ValosSzam; const vSzam2C:ValosSzam):string;
+var
+	vSzam1,vSzam2 : ValosSzam;
+	ered :string;
+	h    :integer;
+	i    :integer;
+	elso : boolean;
+	vmi  : ValosSzam;
+	tmp  : string;
+	szamr: string;
 begin
+	// kezdeti beállítások
+	vSzam1 := vSzam1C;
+	vSzam2 := vSzam2C;
+	vSzam1.elojel := Poz;
+	vSzam2.elojel := Poz;
+	szamr  := IntToStr(vSzam1.szamrendszer);
+	// nullával való összehasonlítás
+	tmp := '(+)0,0('+szamr+')';
+	StrToValos(tmp,vmi);
+	// ha nulla akkor kilépés nullával való osztás nem lehet
+	if ( VEgyenlo(vmi, vSzam2))then
+	begin
+		VOszt := 'Nullaval nem lehet osztani!';
+		exit;
+	end;
+	
+	if ( VNagyobb(vSzam2,vSzam1)) then
+	begin 
+		h := 0;
+		ered := '0,';
+		elso := false;
+		while ( VNagyobb(vSzam2,vSzam1) ) do
+		begin
+			tmp := '(+)0,0('+szamr+')';
+			StrToValos(tmp,vmi);
+			for i := 1 to vSzam1.szamrendszer do
+			begin
+				tmp  := VOsszead(vmi,vSzam1);
+				StrToValos(tmp,vmi)
+			end;
+			vSzam1 := vmi;
+			inc(h);
+		end;
+		dec(h);
+		for i := 1 to h do
+		begin
+			ered := ered + '0';
+		end;
+	end
+	else
+	begin
+		ered := '';
+		elso := true;
+	end;
+	tmp := '(+)0,0('+szamr+')';
+	StrToValos(tmp,vmi);
+	while( not (VEgyenlo(vSzam1,vmi)) )do
+	begin
+		h := 0;
+		while( VNagyobbVagyEgyenlo(vSzam1,vSzam2) )do
+		begin
+			inc(h);
+			tmp := VKivon(vSzam1,vSzam2);
+			StrToValos(tmp,vSzam1);
+		end;
+		if (elso) then
+		begin
+			ered := Szamjegy(h)+',';
+			elso := false;
+		end
+		else
+		begin
+			ered := ered + Szamjegy(h);
+		end;
+		if (VEgyenlo(vSzam1,vmi)) then
+		begin
+			break;
+		end;
+		while( VNagyobb(vSzam2,vSzam1) )do
+		begin
+			tmp := '(+)0,0('+szamr+')';
+			StrToValos(tmp,vmi);
+			for i:= 1 to vSzam1.szamrendszer do
+			begin
+				tmp := VOsszead(vmi,vSzam1);
+				StrToValos(tmp,vmi);
+			end;
+			vSzam1 := vmi;
+			tmp := '(+)0,0('+szamr+')';
+			StrToValos(tmp,vmi);
+		end;
+		if ( Length(ered) > 10 ) then
+			break;
+	end;
+	if ( vSzam1C.elojel = vSzam2C.elojel) then
+		ered := '(+)'+ered
+	else
+		ered := '(-)'+ered;
+	ered := ered + '(10)';
+	VOszt := ered;
+end;
+
+{
+* neve: StrToValos 
+* parameter: mit (string), vSzam (valós szám)
+* a string-et valós számmá alakítja
+* }
+procedure StrToValos(var mit : string; var vSzam : ValosSzam );
+var
+	tmp         : string;
+	hol         : integer;
+	meddig      : integer;
+begin
+	tmp := Copy(mit,2,1);
+	if( tmp = '+' )then
+		vSzam.elojel := Poz
+	else
+		vSzam.elojel := Neg;
+		
+	hol := Pos(',',mit);
+	tmp := Copy(mit,4,hol-4);
+	vSzam.egesz.jegy  := tmp;
+	vSzam.egesz.hossz := Length(tmp);
+	Delete(mit,1,3);
+	hol := Pos(',',mit);
+	meddig := Pos('(',mit);
+	tmp := Copy(mit,hol+1,meddig-hol-1);
+	vSzam.tort.jegy := tmp;
+	vSzam.tort.hossz := Length(tmp);
+	hol := Pos('(',mit);
+	meddig := Pos(')',mit);
+	tmp := Copy(mit,hol+1,meddig-hol-1);
+	vSzam.szamrendszer := StrToInt(tmp);
+end;
+
+{
+* neve: VNagyobbVagyEgyenlo 
+* parameter: miC (valós szám), minelC (valós szám)
+* visszatérés: boolean
+* Ha miC >= minelC akkor true, egyébként false
+* }
+function VNagyobbVagyEgyenlo(const miC : ValosSzam; const minelC : ValosSzam): boolean;
+begin
+	if( (VNagyobb(miC,minelC)) or (VEgyenlo(miC,minelC)) ) then
+		VNagyobbVagyEgyenlo := true
+	else
+		VNagyobbVagyEgyenlo := false;
+end;
+
 end.

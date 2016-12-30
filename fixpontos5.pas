@@ -65,5 +65,7 @@ BEGIN
 	writeln('Osszeguk   :',VOsszead(vSzam1,vSzam2));
 	Elvalaszto();
 	writeln('Kulonbseguk:',VKivon(vSzam1,vSzam2));
+	Elvalaszto();
+	writeln('Osztasuk:',VOszt(vSzam1,vSzam2));
 END.
 
