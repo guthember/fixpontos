@@ -1137,12 +1137,12 @@ begin
 		end;
 		if (elso) then
 		begin
-			ered := Szamjegy(h)+',';
+			ered := IntToStr(h)+',';
 			elso := false;
 		end
 		else
 		begin
-			ered := ered + Szamjegy(h);
+			ered := ered + IntToStr(h);
 		end;
 		if (VEgyenlo(vSzam1,vmi)) then
 		begin
